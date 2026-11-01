@@ -1,0 +1,22 @@
+---
+- name: Update apt cache and apply safe upgrades (Debian family)
+  ansible.builtin.apt: { update_cache: true, upgrade: safe, cache_valid_time: 3600 }
+  when: ansible_os_family == "Debian"
+- name: Update packages (RedHat family)
+  ansible.builtin.dnf: { name: "*", state: latest }
+  when: ansible_os_family == "RedHat"
+- name: Install baseline packages
+  ansible.builtin.package:
+    name: [curl, vim, git, rsync, unzip, htop, logrotate, chrony]
+    state: present
+- name: Ensure time sync is running
+  ansible.builtin.service:
+    name: "{{ 'chrony' if ansible_os_family == 'Debian' else 'chronyd' }}"
+    state: started
+    enabled: true
+- name: Set secure permissions on sensitive files
+  ansible.builtin.file: { path: "{{ item.path }}", mode: "{{ item.mode }}", owner: root }
+  loop:
+    - { path: /etc/passwd, mode: "0644" }
+    - { path: /etc/group, mode: "0644" }
+    - { path: /etc/shadow, mode: "0640" }

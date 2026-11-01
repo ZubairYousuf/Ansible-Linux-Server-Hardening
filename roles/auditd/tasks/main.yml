@@ -1,0 +1,19 @@
+---
+- name: Install auditd
+  ansible.builtin.package:
+    name: "{{ 'auditd' if ansible_os_family == 'Debian' else 'audit' }}"
+    state: present
+- name: Audit rules for identity, sudo and sshd changes
+  ansible.builtin.copy:
+    dest: /etc/audit/rules.d/hardening.rules
+    content: |
+      -w /etc/passwd -p wa -k identity
+      -w /etc/shadow -p wa -k identity
+      -w /etc/group -p wa -k identity
+      -w /etc/sudoers -p wa -k sudo_changes
+      -w /etc/sudoers.d/ -p wa -k sudo_changes
+      -w /etc/ssh/sshd_config -p wa -k sshd_config
+    mode: "0640"
+  notify: Load audit rules
+- name: Enable auditd
+  ansible.builtin.service: { name: auditd, state: started, enabled: true }

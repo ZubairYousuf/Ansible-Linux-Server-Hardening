@@ -1,0 +1,26 @@
+---
+- name: Create admin user
+  ansible.builtin.user:
+    name: "{{ admin_user }}"
+    shell: /bin/bash
+    groups: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
+    append: true
+- name: Install admin SSH public key
+  ansible.posix.authorized_key: { user: "{{ admin_user }}", key: "{{ admin_ssh_public_key }}", state: present }
+- name: Allow passwordless sudo for admin (key-only login)
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/90-{{ admin_user }}"
+    content: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    mode: "0440"
+    validate: "visudo -cf %s"
+- name: Lock root password
+  ansible.builtin.user: { name: root, password_lock: true }
+- name: Enforce password aging defaults
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "^{{ item.key }}\\s"
+    line: "{{ item.key }}   {{ item.value }}"
+  loop:
+    - { key: PASS_MAX_DAYS, value: 90 }
+    - { key: PASS_MIN_DAYS, value: 1 }
+    - { key: PASS_WARN_AGE, value: 14 }

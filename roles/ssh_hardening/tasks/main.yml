@@ -1,0 +1,19 @@
+---
+- name: Ensure drop-in directory exists
+  ansible.builtin.file: { path: /etc/ssh/sshd_config.d, state: directory, mode: "0755" }
+- name: Ensure main config includes drop-ins (older distros)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    line: "Include /etc/ssh/sshd_config.d/*.conf"
+    insertbefore: BOF
+    state: present
+  notify: Restart sshd
+- name: Deploy hardened sshd config
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config.d/00-hardening.conf
+    mode: "0600"
+  notify: Restart sshd
+- name: Validate sshd configuration
+  ansible.builtin.command: sshd -t
+  changed_when: false

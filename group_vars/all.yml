@@ -1,0 +1,8 @@
+admin_user: deploy
+admin_ssh_public_key: "ssh-ed25519 AAAA...replace_me you@host"
+ssh_port: 22
+ssh_allowed_users: ["{{ admin_user }}"]
+firewall_allowed_tcp_ports: ["{{ ssh_port }}", 80, 443]
+fail2ban_maxretry: 5
+fail2ban_bantime: 3600
+fail2ban_findtime: 600

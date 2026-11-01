@@ -1,0 +1,20 @@
+---
+- name: Unattended security updates (Debian)
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Install unattended-upgrades
+      ansible.builtin.apt: { name: unattended-upgrades, state: present }
+    - name: Enable periodic upgrades
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+        mode: "0644"
+- name: Automatic security updates (RedHat)
+  when: ansible_os_family == "RedHat"
+  block:
+    - name: Install dnf-automatic
+      ansible.builtin.dnf: { name: dnf-automatic, state: present }
+    - name: Enable timer
+      ansible.builtin.service: { name: dnf-automatic-install.timer, state: started, enabled: true }
